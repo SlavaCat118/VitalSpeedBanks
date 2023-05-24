@@ -75,19 +75,19 @@ class FileAddingTreeview(ttk.Frame):
 		return [[names[i], paths[i]] for i in range(len(items))]
 
 	def _handle_selection(self, *a):
-		if len(self.tree.get_children()) > 0:
+		if len(self.tree.get_children()) > 0 and len(self.tree.selection()) > 0:
 			item = self.tree.selection()[0]
 			text = self.tree.item(item)["values"][1]
 			self.current_var.set(text)
 
 	def _select_all(self, *a):
-		print("bruh")
 		self.tree.selection_set(self.tree.get_children())
 
 	def add_items(self, *items):
 		# items = [[name,path]]
 		for item in items:
-			self.tree.insert("",tk.END,values=(item[0],item[1]))
+			new_item = self.tree.insert("",tk.END,values=(item[0],item[1]))
+			self.tree.selection_add(new_item)
 			self.update_label()
 
 	def remove_items(self):
@@ -120,8 +120,10 @@ class SpeedBank(ttk.Frame):
 
 		self.tree_frame = ttk.Frame(self)
 
+		self.allowed_audio = [".wav",".flac",".mp3",".aiff",".ogg"]
+
 		self.preset_tree = FileAddingTreeview(self.tree_frame,[("Presets","*.vital")])
-		self.wavetable_tree = FileAddingTreeview(self.tree_frame,[("Wavetables","*.vitaltable")])
+		self.wavetable_tree = FileAddingTreeview(self.tree_frame,[("Wavetables","*.vitaltable .wav .flac .mp3 .aiff .ogg")])
 		self.lfo_tree = FileAddingTreeview(self.tree_frame,[("Lfos","*.vitallfo")])
 		self.sample_tree = FileAddingTreeview(self.tree_frame,[("Samples","*.wav .flac .mp3 .aiff .ogg")])
 
@@ -151,6 +153,9 @@ class SpeedBank(ttk.Frame):
 		self.export_frame = ttk.Frame(self)
 		self.bank_name_entry = ttk.Entry(self.export_frame, textvariable=self.bank_name, width=15)
 		self.export_button = ttk.Button(self.export_frame, text="EXPORT", command=self.export)
+
+		self.sample_to_wavetable_button = ttk.Button(self.actions_frame, text="Samples => Wavetables", command=self.sample_to_wavetable)
+		self.wavetable_to_sample_button = ttk.Button(self.actions_frame, text="Wavetables => Samples", command=self.wavetable_to_sample)
 
 	def grid(self,*a,**k):
 		# Configure weighting
@@ -197,6 +202,10 @@ class SpeedBank(ttk.Frame):
 		ttk.Label(self.auto_add_check_frame, text="Lfos: ").grid(row=2,column=0,sticky=tk.W)
 		ttk.Label(self.auto_add_check_frame, text="Samples: ").grid(row=3,column=0,sticky=tk.W)
 
+		ttk.Separator(self.actions_frame, orient=tk.HORIZONTAL).grid(row=3,column=0,sticky=tk.EW,pady=10,padx=10)
+		self.sample_to_wavetable_button.grid(row=4,column=0,sticky=tk.NSEW)
+		self.wavetable_to_sample_button.grid(row=5,column=0,sticky=tk.NSEW)
+
 		ttk.Separator(self.export_frame, orient=tk.HORIZONTAL).grid(row=0,column=0,sticky=tk.EW,pady=10,padx=10)
 		ttk.Label(self.export_frame, text="Name: ").grid(row=0,column=0)
 
@@ -206,6 +215,22 @@ class SpeedBank(ttk.Frame):
 		self.export_frame.grid(row=1,column=0,sticky=tk.NSEW, padx=10)
 
 		self.tree_frame.grid(row=0,column=1, sticky=tk.NSEW, rowspan=2)
+
+	def sample_to_wavetable(self, *a):
+		selected_samples = self.sample_tree.tree.selection()
+		items = [self.sample_tree.tree.item(item)["values"] for item in selected_samples]
+		self.wavetable_tree.add_items(*items)
+		self.sample_tree.tree.delete(*selected_samples)
+
+	def wavetable_to_sample(self, *a):
+		selected_tables = self.wavetable_tree.tree.selection()
+		items = [self.wavetable_tree.tree.item(item)["values"] for item in selected_tables]
+		legal_items = []
+		for n, item in enumerate(items):
+			if os.path.splitext(item[0])[-1] in self.allowed_audio:
+				legal_items.append(item)
+				self.wavetable_tree.tree.delete(selected_tables[n])
+		self.sample_tree.add_items(*legal_items)
 
 	def remove_all(self, *a):
 		deleting = {
@@ -255,7 +280,7 @@ class SpeedBank(ttk.Frame):
 							found["wavetables"].append(full_path)
 						elif ext == ".vitallfo": 
 							found["lfos"].append(full_path)
-						elif ext in [".wav",".flac",".mp3",".aiff",".ogg"]: 
+						elif ext in self.allowed_audio: 
 							found["samples"].append(full_path)
 
 				if os.path.isdir(full_path):
@@ -275,7 +300,7 @@ class SpeedBank(ttk.Frame):
 		if self.auto_add_lfos.get():
 			looking_for.append(".vitallfo")
 		if self.auto_add_samples.get():
-			looking_for += [".wav",".flac",".mp3",".aiff",".ogg"]
+			looking_for += self.allowed_audio
 
 		matching = get_matching(directory,looking_for)
 
@@ -328,6 +353,7 @@ class SpeedBank(ttk.Frame):
 
 		messagebox.showinfo(title="Export Complete",message="Export of "+name+" completed")
 		self.export_button.config(text="EXPORT")
+
 
 if __name__ == "__main__":
 	root = tk.Tk()
