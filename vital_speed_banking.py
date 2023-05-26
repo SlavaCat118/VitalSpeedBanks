@@ -34,9 +34,13 @@ class FileAddingTreeview(ttk.Frame):
 		self.current_var.set("c://parent_folder")
 
 		self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
+
 		self.tree.configure(yscrollcommand = self.scrollbar.set)
+
 		self.tree.bind("<<TreeviewSelect>>",self._handle_selection)
 		self.tree.bind("<Control-a>",self._select_all)
+		self.tree.bind("<Shift-A>",self.add_files)
+		self.tree.bind("<Control-x>",self.remove_items)
 
 	def grid(self, *a, **k):
 		super().grid(*a,**k)
@@ -60,7 +64,7 @@ class FileAddingTreeview(ttk.Frame):
 	def update_label(self, *a):
 		self.label.config(text=self.label_text+"("+str(len(self.tree.get_children()))+")")
 
-	def add_files(self):
+	def add_files(self, *a):
 		items = fd.askopenfilenames(filetypes=self.types)
 		self.add_items(*self._format_file_names(items))
 		self.update_label()
@@ -90,12 +94,12 @@ class FileAddingTreeview(ttk.Frame):
 			self.tree.selection_add(new_item)
 			self.update_label()
 
-	def remove_items(self):
+	def remove_items(self, *a):
 		selection = self.tree.selection()
 		self.tree.delete(*selection)
 		self.update_label()
 
-	def delete_all(self):
+	def delete_all(self, *a):
 		self.tree.delete(*self.tree.get_children())
 		self.update_label()
 
@@ -154,8 +158,8 @@ class SpeedBank(ttk.Frame):
 		self.bank_name_entry = ttk.Entry(self.export_frame, textvariable=self.bank_name, width=15)
 		self.export_button = ttk.Button(self.export_frame, text="EXPORT", command=self.export)
 
-		self.sample_to_wavetable_button = ttk.Button(self.actions_frame, text="Samples => Wavetables", command=self.sample_to_wavetable)
-		self.wavetable_to_sample_button = ttk.Button(self.actions_frame, text="Wavetables => Samples", command=self.wavetable_to_sample)
+		self.sample_to_wavetable_button = ttk.Button(self.sample_tree, text="Samples => Wavetables", command=self.sample_to_wavetable)
+		self.wavetable_to_sample_button = ttk.Button(self.wavetable_tree, text="Wavetables => Samples", command=self.wavetable_to_sample)
 
 	def grid(self,*a,**k):
 		# Configure weighting
@@ -182,6 +186,8 @@ class SpeedBank(ttk.Frame):
 		self.wavetable_tree.grid(row=0,column=1, sticky=tk.NSEW)
 		self.lfo_tree.grid(row=0,column=2, sticky=tk.NSEW)
 		self.sample_tree.grid(row=0,column=3, sticky=tk.NSEW)
+		self.sample_to_wavetable_button.grid(row=0,column=0,columnspan=2,sticky=tk.E)
+		self.wavetable_to_sample_button.grid(row=0,column=0,columnspan=2,sticky=tk.E)
 
 		self.actions_frame.grid(row=0,column=0,sticky=tk.NSEW,padx=10)
 		ttk.Label(self.actions_frame, text="Actions: ").grid(row=0,column=0)
@@ -203,8 +209,6 @@ class SpeedBank(ttk.Frame):
 		ttk.Label(self.auto_add_check_frame, text="Samples: ").grid(row=3,column=0,sticky=tk.W)
 
 		ttk.Separator(self.actions_frame, orient=tk.HORIZONTAL).grid(row=3,column=0,sticky=tk.EW,pady=10,padx=10)
-		self.sample_to_wavetable_button.grid(row=4,column=0,sticky=tk.NSEW)
-		self.wavetable_to_sample_button.grid(row=5,column=0,sticky=tk.NSEW)
 
 		ttk.Separator(self.export_frame, orient=tk.HORIZONTAL).grid(row=0,column=0,sticky=tk.EW,pady=10,padx=10)
 		ttk.Label(self.export_frame, text="Name: ").grid(row=0,column=0)
@@ -257,7 +261,7 @@ class SpeedBank(ttk.Frame):
 		if deleting["samples"]:
 			self.sample_tree.delete_all()
 
-	def auto_add(self):
+	def auto_add(self, *a):
 		directory = fd.askdirectory(title="Auto Add Files from Folder")
 		if directory == "":
 			return
@@ -364,5 +368,14 @@ if __name__ == "__main__":
 	
 	app = SpeedBank()
 	app.grid(sticky=tk.NSEW,padx=10,pady=10)
+
+	root.bind("<Shift-S>",app.wavetable_to_sample)
+	root.bind("<Shift-W>",app.sample_to_wavetable)
+	root.bind("<Alt-a>",app.auto_add)
+	root.bind("<Return>",app.export)
+	root.bind("1",lambda x:app.auto_add_presets.set(not app.auto_add_presets.get()))
+	root.bind("2",lambda x:app.auto_add_wavetables.set(not app.auto_add_wavetables.get()))
+	root.bind("3",lambda x:app.auto_add_lfos.set(not app.auto_add_lfos.get()))
+	root.bind("4",lambda x:app.auto_add_samples.set(not app.auto_add_samples.get()))
 
 	root.mainloop()
