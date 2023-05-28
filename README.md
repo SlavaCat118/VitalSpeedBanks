@@ -1,5 +1,5 @@
 # VitalSpeedBanks
-A faster bank creation utility for the Vital synthesizer
+A faster bank creation utility for the Vital synthesizer. Python compatable with Windows, Mac, and Linux. (Binaries currently available only for Windows)
 
 ![image](https://github.com/SlavaCat118/VitalSpeedBanks/assets/71950453/33c14b74-9759-4d42-8313-ba167093242d)
 
