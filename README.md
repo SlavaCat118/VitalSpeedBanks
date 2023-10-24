@@ -21,3 +21,9 @@ A faster bank creation utility for the Vital synthesizer. Python compatable with
 - [Ctrl+A] : Select all items
 - [Shift+A] : Add files to the list (Shortcut for the "Add" button)
 - [Ctrl+X] : Remove selected items (Shortcut for the "Remove" button)
+
+# FOR MACS
+- There is no Mac build because I have no Mac computer
+- If you want to run it, you will need to have python on your system (most Macs already do)
+- Just download the files, extract, and run the `vital_speed_banking.py` file
+- This product has been tested and confirmed to work on a Mac device, good luck.
